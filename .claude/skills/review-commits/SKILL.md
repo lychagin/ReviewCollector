@@ -48,6 +48,8 @@ Read the JSON from stdout. It has the shape:
 
 If the command exits with code 1, stop and report the error to the user.
 
+If Node.js reports "Cannot find module", stop with: `get-diff.mjs not found in project root. Check that you are running from the review-collector directory.`
+
 ---
 
 ## Step 3: Check patterns file
@@ -80,7 +82,7 @@ For each selected pattern, examine the diff carefully. A violation exists when t
 
 For each violation, note:
 - Pattern ID and title
-- The file path and approximate line number (from the diff `+++ b/...` and `@@` headers)
+- The file path and line number from the nearest `@@` hunk header above the violation (this is the hunk start line, not the exact line)
 - The specific code fragment that violates the rule (copy from the `+` lines in the diff)
 - A concise explanation of why it violates the pattern
 
@@ -92,6 +94,8 @@ Determine the short SHA: use the first SHA from `commits[0].sha` (7 chars).
 Determine the commit count label:
 - 1 commit → `"<sha> (1 commit)"`
 - N commits → `"<first-sha>..<last-sha> (N commits)"`
+
+`<first-sha>` = `commits[0].sha` (7 chars). `<last-sha>` = `commits[commits.length - 1].sha` (7 chars).
 
 ### If violations found:
 
@@ -124,8 +128,12 @@ Determine the commit count label:
 **Commits:** <label>
 **Date:** <YYYY-MM-DD>
 
+---
+
 ✅ Нарушений паттернов не найдено.
 ```
+
+**Date** is today's date in YYYY-MM-DD format (not the commit date).
 
 ---
 
@@ -135,6 +143,8 @@ Save the report to:
 ```
 review/reports/<YYYY-MM-DD>-<short-sha>.md
 ```
+
+`<short-sha>` is always `commits[0].sha` (7 chars) — the earliest commit in the range.
 
 Create the `review/reports/` directory if it doesn't exist (use the Bash tool: `mkdir -p review/reports`).
 
