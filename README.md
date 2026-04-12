@@ -63,14 +63,14 @@ cd review-collector
 ```
 
 Скрипт выполнит:
-- Копирование файлов инструмента в `your-project/.review-collector/`
+- Копирование файлов инструмента в `your-project/review-collector/`
 - Копирование Claude скиллов в `your-project/.claude/skills/`
 - Создание рабочих директорий
 
 После установки скопируй и заполни credentials:
 
 ```bash
-cp .review-collector/.env.example .review-collector/.env
+cp review-collector/.env.example review-collector/.env
 # Редактируй .env: укажи GITLAB_TOKEN и GITLAB_URL
 ```
 

@@ -56,7 +56,7 @@ for skill in mine-patterns review-commits; do
 done
 
 # Copy tool files
-TOOL_DEST="$TARGET_DIR/.review-collector"
+TOOL_DEST="$TARGET_DIR/review-collector"
 mkdir -p "$TOOL_DEST"
 
 echo ""
@@ -90,9 +90,9 @@ echo "Creating runtime directories..."
 mkdir -p "$TOOL_DEST/review/raw/pending"
 mkdir -p "$TOOL_DEST/review/raw/processed"
 mkdir -p "$TOOL_DEST/patterns"
-echo "  ✓ .review-collector/review/raw/pending/"
-echo "  ✓ .review-collector/review/raw/processed/"
-echo "  ✓ .review-collector/patterns/"
+echo "  ✓ review-collector/review/raw/pending/"
+echo "  ✓ review-collector/review/raw/processed/"
+echo "  ✓ review-collector/patterns/"
 
 # Print setup instructions
 echo ""
