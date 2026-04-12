@@ -7,7 +7,7 @@ Standalone инструмент для сбора, хранения и анал�
 **Конечная цель** — замкнутый цикл из трёх подсистем:
 
 1. **Extraction Tool** ✅ — сбор комментариев из GitLab API за период → JSONL файлы
-2. **Pattern Mining Skill** 🔜 — чтение JSONL, нормализация, кластеризация, синтез правил ревью
+2. **Pattern Mining Skill** ✅ — чтение JSONL, нормализация, кластеризация, синтез правил ревью
 3. **Specialized Reviewer Agent** 🔜 — получает diff нового MR + топ-N паттернов → проверяет только по известным правилам
 
 ---
@@ -81,6 +81,30 @@ node --test mr-comments-collector.test.mjs
 
 - `index.js` — MCP сервер с инструментами `/get-comment`, `/reply-comment`, `resolve_mr_discussion` и др.
 - `legacy/` — старый LLM-based pipeline (gitlab-review-collector.mjs, llm-client.mjs и др.)
+
+---
+
+### Pattern Mining Skill (полностью готов)
+
+| Файл | Назначение |
+|------|-----------|
+| `preprocess-comments.mjs` | CLI препроцессор: thread reconstruction, нормализация, state |
+| `preprocess-comments.test.mjs` | Unit-тесты (node:test), 24 теста |
+| `.claude/skills/mine-patterns.md` | Claude Code скилл: Pass 1 + Pass 2 |
+
+#### Возможности
+
+- Инкрементальная обработка: только новые файлы из `processed/`
+- Pass 1: чанки по 30 тредов → raw паттерны → `patterns/mining-state.json`
+- Pass 2: финализация, дедупликация → `patterns/review-patterns.json` + `.md`
+
+#### Запуск
+
+```bash
+# 1. Убедись что есть файлы в processed/
+# 2. Запусти скилл в Claude Code
+/mine-patterns
+```
 
 ---
 
@@ -167,3 +191,4 @@ DEFAULT_PROJECT_ID=your-group/your-project
 | 2026-04-10 | Extraction Tool реализован (12 задач, 27 тестов) в Terra на ветке `review-collector-final` |
 | 2026-04-10 | Проект вынесен в отдельный репозиторий `/home/sergey/source/review-collector` |
 | | Remote: `git@github.com:lychagin/GetGitlabComments.git` |
+| 2026-04-12 | Pattern Mining Skill реализован (24 теста, CLI препроцессор, скилл /mine-patterns) |
