@@ -51,8 +51,8 @@ node collect-mr-comments.mjs archive --older-than 30d --dry-run
 
 ```
 review/raw/
-  pending/     ← новые экспорты (ждут проверки)
-  processed/   ← проверенные, готовы к анализу
+  pending/     ← новые экспорты из collect-mr-comments.mjs
+  processed/   ← после обработки preprocess-comments.mjs (перемещается автоматически)
   archive/
     2026-01/   ← автоархив по месяцам
     2026-02/
@@ -94,14 +94,14 @@ node --test mr-comments-collector.test.mjs
 
 #### Возможности
 
-- Инкрементальная обработка: только новые файлы из `processed/`
+- Инкрементальная обработка: только новые файлы из `review/raw/pending/`
 - Pass 1: чанки по 30 тредов → raw паттерны → `patterns/mining-state.json`
 - Pass 2: финализация, дедупликация → `patterns/review-patterns.json` + `.md`
 
 #### Запуск
 
 ```bash
-# 1. Убедись что есть файлы в processed/
+# 1. Убедись что есть файлы в review/raw/pending/
 # 2. Запусти скилл в Claude Code
 /mine-patterns
 ```
@@ -148,7 +148,7 @@ node --test mr-comments-collector.test.mjs
 ```
 GitLab API
     ↓
-[Extraction Tool] → JSONL files (pending/ → processed/)
+[Extraction Tool] → JSONL files in pending/ → [preprocess-comments.mjs auto-moves to processed/]
     ↓
 [Pattern Mining Skill] → review-patterns.json
     ↓

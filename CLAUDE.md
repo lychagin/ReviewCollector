@@ -27,10 +27,12 @@ review-collector/
   collect-mr-comments.mjs         # Extraction Tool: CLI обёртка
   mr-comments-collector.test.mjs  # Тесты Extraction Tool (27 тестов)
   gitlab-client.mjs               # HTTP клиент GitLab API
-  preprocess-comments.mjs         # Pattern Mining: препроцессор (создаётся)
-  preprocess-comments.test.mjs    # Тесты препроцессора (создаётся)
-  .claude/skills/mine-patterns.md # Claude Code скилл /mine-patterns (создаётся)
-  processed/                      # JSONL файлы после extraction (вход для mining)
+  preprocess-comments.mjs         # Pattern Mining: препроцессор
+  preprocess-comments.test.mjs    # Тесты препроцессора
+  .claude/skills/mine-patterns/SKILL.md # Claude Code скилл /mine-patterns
+  review/raw/
+    pending/                      # новые экспорты из collect-mr-comments.mjs
+    processed/                    # после обработки (auto-moved by preprocess-comments.mjs)
   patterns/                       # Выход pattern mining
     mining-state.json             # Состояние: обработанные файлы + raw паттерны
     threads.jsonl                 # Промежуточный артефакт препроцессора
@@ -52,7 +54,7 @@ review-collector/
 ## Текущий статус
 
 - ✅ **Extraction Tool** — готов (27 тестов)
-- 🔜 **Pattern Mining** — в разработке (ветка `feature/pattern-mining`)
+- ✅ **Pattern Mining** — готов (препроцессор + скилл /mine-patterns)
 - 🔜 **Reviewer Agent** — не начат
 
 ## Документация

@@ -24,8 +24,8 @@ node preprocess-comments.mjs
 ```
 
 Read the output:
-- If output is "No new files to process." → skip Pass 1, go directly to Pass 2
-- If output starts with "Processed" → note how many threads were written, proceed to Pass 1
+- If output is "No new files to process." → no `.jsonl` files in `review/raw/pending/`, skip Pass 1, go directly to Pass 2
+- If output starts with "Processed" → files have been moved to `review/raw/processed/`, note how many threads were written, proceed to Pass 1
 - If it exits with an error → stop and report the error to the user
 
 ---
@@ -80,7 +80,7 @@ After each chunk:
 ## Step 3: Pass 2 — Finalization
 
 Read `patterns/mining-state.json` and check `raw_patterns`. If the array is empty, stop and report:
-"No patterns to finalize. Add `.jsonl` files to `processed/` and re-run `/mine-patterns`."
+"No patterns to finalize. Add `.jsonl` files to `review/raw/pending/` and re-run `/mine-patterns`."
 
 Otherwise, read all `raw_patterns` and proceed.
 

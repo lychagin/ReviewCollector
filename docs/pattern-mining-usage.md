@@ -2,12 +2,12 @@
 
 ## Обзор
 
-Pattern Mining — подсистема 2 Review Collector. Читает MR-комментарии из `processed/`,
+Pattern Mining — подсистема 2 Review Collector. Читает MR-комментарии из `review/raw/pending/`,
 синтезирует review паттерны через двухпроходный LLM-анализ.
 
 ## Предварительные требования
 
-- Extraction Tool отработал, файлы находятся в `processed/`
+- Extraction Tool отработал, файлы находятся в `review/raw/pending/`
 - Claude Code запущен в директории проекта
 
 ## Типичный рабочий сценарий
@@ -16,13 +16,15 @@ Pattern Mining — подсистема 2 Review Collector. Читает MR-ко
 # 1. Собрать комментарии (Extraction Tool)
 node collect-mr-comments.mjs --period 3m
 
-# 2. Пометить как готово к анализу
-mv pending/mr-notes-*.jsonl processed/
-mv pending/mr-notes-*.meta.json processed/
-
-# 3. Запустить Pattern Mining
+# 2. Запустить Pattern Mining
 /mine-patterns
 ```
+
+Скилл автоматически:
+- Читает новые файлы из `review/raw/pending/`
+- Переносит каждый обработанный файл в `review/raw/processed/`
+- Обновляет `patterns/mining-state.json`
+- Выполняет LLM-анализ (Pass 1 + Pass 2)
 
 ## Запуск скилла
 
@@ -32,7 +34,7 @@ mv pending/mr-notes-*.meta.json processed/
 ```
 
 Скилл выполнит:
-1. Запустит `preprocess-comments.mjs` — реконструкция тредов из `processed/`
+1. Запустит `preprocess-comments.mjs` — читает `review/raw/pending/`, перемещает в `review/raw/processed/`
 2. Pass 1 — анализ тредов чанками, синтез raw паттернов
 3. Pass 2 — финализация, дедупликация, генерация output файлов
 
@@ -47,7 +49,7 @@ mv pending/mr-notes-*.meta.json processed/
 
 ## Повторный запуск (новые данные)
 
-При появлении новых файлов в `processed/` просто запустите `/mine-patterns` снова.
+При появлении новых файлов в `review/raw/pending/` просто запустите `/mine-patterns` снова.
 Скилл обработает только новые файлы и пересинтезирует финальные паттерны.
 
 ## Просмотр паттернов
@@ -116,12 +118,15 @@ cat patterns/review-patterns.json | jq '[.patterns[].title]'
 ### Smoke-тест полного pipeline
 
 ```bash
-# 1. Убедись что есть файлы в processed/
-ls processed/
+# 1. Убедись что есть файлы в pending/
+ls review/raw/pending/
 
 # 2. Запусти препроцессор
 node preprocess-comments.mjs
 # Ожидаем: "Processed N new files, M threads written"
+
+# 2b. Проверь что файлы перемещены
+ls review/raw/processed/
 
 # 3. Проверь threads.jsonl
 head -1 patterns/threads.jsonl | jq .
@@ -146,7 +151,7 @@ cat patterns/review-patterns.json | jq '.patterns | length'
 /mine-patterns
 # Ожидаем: Pass 1 пропущен ("No new files to process"), только Pass 2
 
-# 3. Добавь новый файл в processed/ и запусти снова
+# 3. Добавь новый файл в review/raw/pending/ и запусти снова
 /mine-patterns
 # Ожидаем: обработан только новый файл
 ```
@@ -156,8 +161,9 @@ cat patterns/review-patterns.json | jq '.patterns | length'
 ## Troubleshooting
 
 **`preprocess-comments.mjs` не находит новых файлов**
-- Убедись что файлы находятся в `processed/`, не в `pending/`
-- Проверь `mining-state.json` → `processed_files` — возможно файл уже отмечен как обработанный
+- Убедись что файлы находятся в `review/raw/pending/`
+- Проверь `mining-state.json` → `processed_files` — возможно файл уже был обработан
+  и перемещён в `review/raw/processed/`
 
 **Pass 1 генерирует слишком много дублирующихся raw паттернов**
 - Это нормально — Pass 2 их объединит

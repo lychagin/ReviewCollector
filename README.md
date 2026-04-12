@@ -84,9 +84,24 @@ review/raw/
 
 По умолчанию `output-root` — папка `review/raw/` в директории проекта (создаётся автоматически), или задаётся через `--output`.
 
-### Управление файлами
+### Анализ паттернов
 
-После того как файлы из `pending/` проверены/обработаны, перемести их в `processed/` вручную. Старые файлы из `processed/` можно архивировать:
+После сбора запусти Pattern Mining — он прочитает файлы из `review/raw/pending/` и автоматически
+переместит их в `review/raw/processed/` после успешной обработки:
+
+```
+/mine-patterns
+```
+
+Либо запусти препроцессор напрямую (без LLM-анализа):
+
+```bash
+node preprocess-comments.mjs
+# Читает review/raw/pending/, перемещает в review/raw/processed/
+# Записывает patterns/threads.jsonl
+```
+
+Старые файлы из `processed/` можно архивировать:
 
 ```bash
 # Показать что будет архивировано (ничего не трогает)
@@ -138,12 +153,19 @@ node --test mr-comments-collector.test.mjs
 
 ```
 .
-├── collect-mr-comments.mjs       # CLI
-├── mr-comments-collector.mjs     # Ядро: pipeline + pure functions
-├── mr-comments-collector.test.mjs # Unit тесты
-├── gitlab-client.mjs             # HTTP клиент GitLab API
-├── .env.example                  # Шаблон конфигурации
-└── PROGRESS.md                   # История работы и планы
+├── collect-mr-comments.mjs        # CLI (Extraction Tool)
+├── mr-comments-collector.mjs      # Ядро: pipeline + pure functions
+├── mr-comments-collector.test.mjs # Unit тесты (27 тестов)
+├── gitlab-client.mjs              # HTTP клиент GitLab API
+├── preprocess-comments.mjs        # Pattern Mining: препроцессор
+├── preprocess-comments.test.mjs   # Unit тесты препроцессора (26 тестов)
+├── .env.example                   # Шаблон конфигурации
+├── PROGRESS.md                    # История работы и планы
+└── patterns/                      # Выход Pattern Mining
+    ├── review-patterns.json       # Финальные паттерны (source of truth)
+    ├── review-patterns.md         # Человекочитаемый view
+    ├── mining-state.json          # Состояние: обработанные файлы + raw паттерны
+    └── threads.jsonl              # Промежуточный артефакт препроцессора
 ```
 
 ## Фильтрация
