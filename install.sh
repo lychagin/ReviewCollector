@@ -47,6 +47,14 @@ for f in \
   fi
 done
 
+# Pre-flight: verify skill directories exist
+for skill in mine-patterns review-commits; do
+  if [[ ! -d "$SCRIPT_DIR/.claude/skills/$skill" ]]; then
+    echo "Error: skill directory missing from installer: .claude/skills/$skill"
+    exit 1
+  fi
+done
+
 # Copy tool files
 TOOL_DEST="$TARGET_DIR/.review-collector"
 mkdir -p "$TOOL_DEST"
@@ -74,3 +82,37 @@ for skill in mine-patterns review-commits; do
   cp -r "$SCRIPT_DIR/.claude/skills/$skill" "$SKILLS_DEST/$skill"
   echo "  ✓ $skill"
 done
+
+# Create runtime directories
+echo ""
+echo "Creating runtime directories..."
+mkdir -p "$TOOL_DEST/review/raw/pending"
+mkdir -p "$TOOL_DEST/review/raw/processed"
+mkdir -p "$TOOL_DEST/patterns"
+echo "  ✓ .review-collector/review/raw/pending/"
+echo "  ✓ .review-collector/review/raw/processed/"
+echo "  ✓ .review-collector/patterns/"
+
+# Print setup instructions
+echo ""
+echo "========================================="
+echo "  review-collector installed successfully"
+echo "========================================="
+echo ""
+
+if [[ -f "$TOOL_DEST/.env" ]]; then
+  echo "  .env already exists — skipped (your config is preserved)"
+else
+  echo "  Next steps:"
+  echo "  1. Copy the env template:"
+  echo "     cp $TOOL_DEST/.env.example $TOOL_DEST/.env"
+  echo "  2. Fill in your credentials in $TOOL_DEST/.env:"
+  echo "     GITLAB_TOKEN=<your token>"
+  echo "     GITLAB_URL=<your gitlab url>"
+fi
+
+echo ""
+echo "  Skills available in Claude Code:"
+echo "    /mine-patterns   — analyze MR comments for review patterns"
+echo "    /review-commits  — review commits against patterns"
+echo ""
