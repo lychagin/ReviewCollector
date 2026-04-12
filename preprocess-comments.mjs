@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from "node:fs";
 import { join, basename } from "node:path";
 
 export const SCHEMA_VERSION = "1.0";
@@ -142,10 +142,19 @@ export function buildThreads(records) {
     return threads;
 }
 
+/**
+ * Writes threads array to patternsDir/threads.jsonl (one thread per line, overwrites).
+ * Returns the output path.
+ */
+export function writeThreadsJsonl(patternsDir, threads) {
+    const outPath = join(patternsDir, "threads.jsonl");
+    writeFileSync(outPath, threads.map((t) => JSON.stringify(t)).join("\n") + "\n");
+    return outPath;
+}
+
 // ─── CLI entry point ──────────────────────────────────────────────────────────
 
-async function main() {
-    const { mkdirSync } = await import("node:fs");
+function main() {
     const projectDir = new URL(".", import.meta.url).pathname;
     const processedDir = join(projectDir, "processed");
     const patternsDir = join(projectDir, "patterns");
@@ -169,13 +178,12 @@ async function main() {
         state.processed_files.push(filename);
     }
 
-    const outPath = join(patternsDir, "threads.jsonl");
-    writeFileSync(outPath, allThreads.map((t) => JSON.stringify(t)).join("\n") + "\n");
+    writeThreadsJsonl(patternsDir, allThreads);
     saveState(patternsDir, state);
 
     console.log(`Processed ${newFiles.length} new file(s), ${allThreads.length} threads written to patterns/threads.jsonl`);
 }
 
 if (process.argv[1] === new URL(import.meta.url).pathname) {
-    main().catch((e) => { console.error(e.message); process.exit(1); });
+    try { main(); } catch (e) { console.error(e.message); process.exit(1); }
 }

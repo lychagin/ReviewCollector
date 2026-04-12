@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { reconstructThread, normalizeText, splitCodeFences, filterAuthorNotes, detectNewFiles } from "./preprocess-comments.mjs";
-import { readJsonlFile, buildThreads, loadState, saveState } from "./preprocess-comments.mjs";
-import { mkdtempSync, writeFileSync as fsWriteFileSync, rmSync } from "node:fs";
+import { readJsonlFile, buildThreads, loadState, saveState, writeThreadsJsonl } from "./preprocess-comments.mjs";
+import { mkdtempSync, writeFileSync as fsWriteFileSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join as pathJoin } from "node:path";
 
@@ -214,6 +214,22 @@ test("saveState / loadState: round-trip", () => {
         const loaded = loadState(dir);
         assert.deepEqual(loaded.processed_files, ["a.jsonl"]);
         assert.ok(loaded.last_updated); // set by saveState
+    } finally {
+        rmSync(dir, { recursive: true });
+    }
+});
+
+test("writeThreadsJsonl: writes threads to JSONL file and returns path", () => {
+    const dir = mkdtempSync(pathJoin(tmpdir(), "rc-test-"));
+    try {
+        const threads = [
+            { discussion_id: "d1", kind: "diff", file_path: null, root_comment: "Fix this", replies: [], code_snippets: [], resolved: false, mr_iid: 1, source_file: "x.jsonl" },
+        ];
+        const outPath = writeThreadsJsonl(dir, threads);
+        assert.ok(outPath.endsWith("threads.jsonl"));
+        const lines = readFileSync(outPath, "utf8").trim().split("\n");
+        assert.equal(lines.length, 1);
+        assert.deepEqual(JSON.parse(lines[0]), threads[0]);
     } finally {
         rmSync(dir, { recursive: true });
     }
