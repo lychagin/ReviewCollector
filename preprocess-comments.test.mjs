@@ -267,6 +267,7 @@ test("moveToProcessed: works when .meta.json absent", () => {
     try {
         moveToProcessed(pendingDir, processedDir, filename);
         assert.ok(existsSync(pathJoin(processedDir, filename)), ".jsonl moved");
+        assert.ok(!existsSync(pathJoin(pendingDir, filename)), ".jsonl removed from pending");
     } finally {
         rmSync(dir, { recursive: true });
     }
