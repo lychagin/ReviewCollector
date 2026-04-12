@@ -16,7 +16,7 @@ if [[ $# -lt 1 ]]; then
   usage
 fi
 
-TARGET_DIR="$(realpath "$1")"
+TARGET_DIR="$(realpath -m "$1")"
 CLAUDE_DIR="${2:-$TARGET_DIR/.claude}"
 
 if [[ ! -d "$TARGET_DIR" ]]; then
@@ -26,3 +26,26 @@ fi
 
 echo "Installing review-collector into: $TARGET_DIR"
 echo "Claude skills directory: $CLAUDE_DIR"
+
+# Check Node.js
+if ! command -v node &>/dev/null; then
+  echo "Warning: node not found. review-collector requires Node.js 18+."
+  echo "Install from https://nodejs.org before using the tool."
+fi
+
+# Copy tool files
+TOOL_DEST="$TARGET_DIR/.review-collector"
+mkdir -p "$TOOL_DEST"
+
+echo ""
+echo "Copying tool files..."
+for f in \
+  mr-comments-collector.mjs \
+  collect-mr-comments.mjs \
+  gitlab-client.mjs \
+  preprocess-comments.mjs \
+  get-diff.mjs \
+  .env.example; do
+  cp "$SCRIPT_DIR/$f" "$TOOL_DEST/$f"
+  echo "  ✓ $f"
+done
