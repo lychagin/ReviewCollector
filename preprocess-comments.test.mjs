@@ -1,6 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { reconstructThread, normalizeText, splitCodeFences } from "./preprocess-comments.mjs";
+import { reconstructThread, normalizeText, splitCodeFences, filterAuthorNotes, detectNewFiles } from "./preprocess-comments.mjs";
+import { mkdtempSync, writeFileSync as fsWriteFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join as pathJoin } from "node:path";
 
 // Helper: minimal flat note record
 function makeNote(overrides = {}) {
@@ -97,4 +100,61 @@ test("reconstructThread: no explicit root note — fallback to first, no duplica
     const thread = reconstructThread(notes);
     assert.equal(thread.root_comment, "First note");
     assert.deepEqual(thread.replies, ["Second note"]);  // First note NOT in replies
+});
+
+test("filterAuthorNotes: single note by author is kept", () => {
+    const notes = [makeNote({ note_by_mr_author: true, is_root_note: true })];
+    assert.equal(filterAuthorNotes(notes).length, 1);
+});
+
+test("filterAuthorNotes: root note by author removed in multi-note thread", () => {
+    const notes = [
+        makeNote({ note_by_mr_author: true, is_root_note: true, reply_index_in_discussion: 0 }),
+        makeNote({ note_by_mr_author: false, is_root_note: false, reply_index_in_discussion: 1 }),
+    ];
+    const result = filterAuthorNotes(notes);
+    assert.equal(result.length, 1);
+    assert.equal(result[0].is_root_note, false);
+});
+
+test("filterAuthorNotes: reply by author is kept", () => {
+    const notes = [
+        makeNote({ note_by_mr_author: false, is_root_note: true, reply_index_in_discussion: 0 }),
+        makeNote({ note_by_mr_author: true, is_root_note: false, reply_index_in_discussion: 1 }),
+    ];
+    assert.equal(filterAuthorNotes(notes).length, 2);
+});
+
+test("filterAuthorNotes: non-author notes always kept", () => {
+    const notes = [
+        makeNote({ note_by_mr_author: false, is_root_note: true }),
+        makeNote({ note_by_mr_author: false, is_root_note: false, reply_index_in_discussion: 1 }),
+    ];
+    assert.equal(filterAuthorNotes(notes).length, 2);
+});
+
+test("detectNewFiles: returns files not in alreadyProcessed", () => {
+    const dir = mkdtempSync(pathJoin(tmpdir(), "rc-test-"));
+    try {
+        fsWriteFileSync(pathJoin(dir, "mr-notes-2026-01.jsonl"), "");
+        fsWriteFileSync(pathJoin(dir, "mr-notes-2026-02.jsonl"), "");
+        fsWriteFileSync(pathJoin(dir, "mr-notes-2026-01.meta.json"), "");
+        const result = detectNewFiles(dir, ["mr-notes-2026-01.jsonl"]);
+        assert.deepEqual(result, ["mr-notes-2026-02.jsonl"]);
+    } finally {
+        rmSync(dir, { recursive: true });
+    }
+});
+
+test("detectNewFiles: empty dir returns empty array", () => {
+    const dir = mkdtempSync(pathJoin(tmpdir(), "rc-test-"));
+    try {
+        assert.deepEqual(detectNewFiles(dir, []), []);
+    } finally {
+        rmSync(dir, { recursive: true });
+    }
+});
+
+test("detectNewFiles: nonexistent dir returns empty array", () => {
+    assert.deepEqual(detectNewFiles("/nonexistent/path", []), []);
 });

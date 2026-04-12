@@ -63,3 +63,31 @@ export function splitCodeFences(text) {
     });
     return { text: cleaned.trim(), code_snippets };
 }
+
+/**
+ * Filters notes_by_mr_author from the notes array before thread reconstruction.
+ * Rule: keep note_by_mr_author=true only if:
+ *   (a) it is the only note in the discussion (self-review), OR
+ *   (b) it is a reply (is_root_note=false) — author responding to reviewer feedback
+ * Remove if: note_by_mr_author=true AND is_root_note=true AND discussion has other notes.
+ */
+export function filterAuthorNotes(notes) {
+    if (notes.length === 1) return notes; // single note — keep regardless
+    return notes.filter((n) => {
+        if (!n.note_by_mr_author) return true;   // not by author — always keep
+        if (!n.is_root_note) return true;         // reply by author — keep (responding to reviewer)
+        return false;                             // root note by author in multi-note thread — remove
+    });
+}
+
+/**
+ * Returns filenames (basename only) from processedDir that are NOT in alreadyProcessed.
+ * Only considers *.jsonl files (not *.meta.json).
+ */
+export function detectNewFiles(processedDir, alreadyProcessed) {
+    if (!existsSync(processedDir)) return [];
+    const all = readdirSync(processedDir)
+        .filter((f) => f.endsWith(".jsonl") && !f.endsWith(".meta.json"));
+    const processed = new Set(alreadyProcessed);
+    return all.filter((f) => !processed.has(f));
+}
