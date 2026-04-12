@@ -20,38 +20,6 @@ structured review report
 
 Review Collector — первая ступень: он скачивает все человеческие комментарии из MR за заданный период и сохраняет их в файлы для дальнейшей обработки.
 
-## Installing into another project
-
-To use review-collector in your project, run `install.sh` from a local clone:
-
-```bash
-git clone <repo-url> review-collector
-cd review-collector
-./install.sh /path/to/your-project
-```
-
-Optionally specify a custom `.claude` directory:
-
-```bash
-./install.sh /path/to/your-project /path/to/your-project/.claude
-```
-
-The script will:
-- Copy tool files to `your-project/.review-collector/`
-- Copy Claude skills to `your-project/.claude/skills/`
-- Create runtime directories
-
-After install, copy and fill in your credentials:
-
-```bash
-cp your-project/.review-collector/.env.example your-project/.review-collector/.env
-# Edit .env: set GITLAB_TOKEN and GITLAB_URL
-```
-
-Then use Claude Code skills in your project:
-- `/mine-patterns` — extract and analyze MR review patterns
-- `/review-commits` — review your commits against the patterns
-
 ## Требования
 
 - Node.js 20+
@@ -63,8 +31,8 @@ Then use Claude Code skills in your project:
 ## Установка
 
 ```bash
-git clone git@github.com:lychagin/GetGitlabComments.git
-cd GetGitlabComments
+git clone git@github.com:lychagin/review-collector.git
+cd review-collector
 cp .env.example .env
 ```
 
@@ -77,6 +45,38 @@ DEFAULT_PROJECT_ID=your-group/your-project
 ```
 
 Токен создаётся в GitLab: **Settings → Access Tokens → read_api**.
+
+## Установка в другой проект
+
+Чтобы использовать review-collector в своём проекте, запусти `install.sh` из локального клона:
+
+```bash
+git clone <repo-url> review-collector
+cd review-collector
+./install.sh /path/to/your-project
+```
+
+Опционально — указать нестандартный каталог `.claude`:
+
+```bash
+./install.sh /path/to/your-project /path/to/your-project/.claude
+```
+
+Скрипт выполнит:
+- Копирование файлов инструмента в `your-project/.review-collector/`
+- Копирование Claude скиллов в `your-project/.claude/skills/`
+- Создание рабочих директорий
+
+После установки скопируй и заполни credentials:
+
+```bash
+cp .review-collector/.env.example .review-collector/.env
+# Редактируй .env: укажи GITLAB_TOKEN и GITLAB_URL
+```
+
+Затем используй скиллы Claude Code в своём проекте:
+- `/mine-patterns` — извлечение и анализ паттернов ревью из MR
+- `/review-commits` — ревью своих коммитов по паттернам
 
 ## Запуск
 
