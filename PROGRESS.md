@@ -50,7 +50,7 @@ node collect-mr-comments.mjs archive --older-than 30d --dry-run
 #### Lifecycle директорий
 
 ```
-output-root/
+review/raw/
   pending/     ← новые экспорты (ждут проверки)
   processed/   ← проверенные, готовы к анализу
   archive/

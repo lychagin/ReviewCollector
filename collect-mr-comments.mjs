@@ -10,7 +10,7 @@
 
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
-import { dirname, resolve, join } from "node:path";
+import { dirname, join } from "node:path";
 import {
     collectMrComments,
     archiveOldProcessedFiles,
@@ -54,9 +54,8 @@ GitLab MR Comments Collector
 }
 
 function getOutputRoot() {
-    // .scripts/mcp/mcp-servers/mcp-get-comments → вверх на 4 уровня до repo root
-    const repoRoot = resolve(__dirname, "..", "..", "..", "..");
-    return join(repoRoot, ".swap", "requirements", "use_cases", "review", "raw");
+    // Проект живёт в отдельном репозитории — сохраняем в review/raw/ рядом со скриптом
+    return join(__dirname, "review", "raw");
 }
 
 function parseBotPatternsFromEnv() {

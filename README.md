@@ -76,13 +76,13 @@ node collect-mr-comments.mjs --period 3m --force
 Результат сохраняется в `pending/`:
 
 ```
-output-root/
+review/raw/
   pending/
     mr-notes-2026-04-12T10-30-00.jsonl      ← данные
     mr-notes-2026-04-12T10-30-00.meta.json  ← метаданные (период, статистика)
 ```
 
-По умолчанию `output-root` — папка `.swap/requirements/use_cases/review/raw/` относительно репозитория, или задаётся через `--output`.
+По умолчанию `output-root` — папка `review/raw/` в директории проекта (создаётся автоматически), или задаётся через `--output`.
 
 ### Управление файлами
 
