@@ -40,7 +40,9 @@ for f in \
   gitlab-client.mjs \
   preprocess-comments.mjs \
   get-diff.mjs \
-  .env.example; do
+  .env.example \
+  README.md \
+  HOW-TO.md; do
   if [[ ! -f "$SCRIPT_DIR/$f" ]]; then
     echo "Error: source file missing from installer: $f"
     exit 1
@@ -67,7 +69,9 @@ for f in \
   gitlab-client.mjs \
   preprocess-comments.mjs \
   get-diff.mjs \
-  .env.example; do
+  .env.example \
+  README.md \
+  HOW-TO.md; do
   cp "$SCRIPT_DIR/$f" "$TOOL_DEST/$f"
   echo "  ✓ $f"
 done
