@@ -194,7 +194,13 @@ async function main() {
     try {
         await runCollect(values);
     } catch (err) {
-        console.error(`\nОшибка: ${err.message}`);
+        if (err.cause?.code === "ECONNREFUSED" || err.cause?.code === "ENOTFOUND" || err.message === "fetch failed") {
+            const gitlabUrl = process.env.GITLAB_URL ?? "(не задан в .env)";
+            console.error(`\nОшибка: не удалось подключиться к GitLab (${gitlabUrl})`);
+            console.error("Проверь: доступна ли сеть, нужен ли VPN, правильный ли GITLAB_URL в .env");
+        } else {
+            console.error(`\nОшибка: ${err.message}`);
+        }
         if (values.verbose) console.error(err.stack);
         process.exit(1);
     }
