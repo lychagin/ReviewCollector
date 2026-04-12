@@ -51,7 +51,7 @@ IMPORTANT:
 Categories: robustness, security, performance, style, architecture, testing
 
 Threads:
-[paste the 30 thread objects here as JSON array]
+[Include the 30 thread objects here as a JSON array]
 
 Respond ONLY with a JSON array:
 [
@@ -79,7 +79,10 @@ After each chunk:
 
 ## Step 3: Pass 2 — Finalization
 
-Read all `raw_patterns` from `patterns/mining-state.json`.
+Read `patterns/mining-state.json` and check `raw_patterns`. If the array is empty, stop and report:
+"No patterns to finalize. Add `.jsonl` files to `processed/` and re-run `/mine-patterns`."
+
+Otherwise, read all `raw_patterns` and proceed.
 
 Analyze them with this prompt:
 
@@ -97,7 +100,7 @@ Rules:
 - Sort by priority (high first), then by category
 
 Raw patterns:
-[paste raw_patterns array here]
+[Include the full raw_patterns array here]
 
 Respond ONLY with a JSON object:
 {
@@ -111,7 +114,7 @@ Respond ONLY with a JSON object:
       "rationale": "...",
       "example_comments": ["quote from evidence"],
       "frequency": 5,
-      "last_seen": "YYYY-MM-DD"
+      "last_seen": "<today's date in YYYY-MM-DD format>"
     }
   ]
 }
