@@ -33,6 +33,20 @@ if ! command -v node &>/dev/null; then
   echo "Install from https://nodejs.org before using the tool."
 fi
 
+# Pre-flight: verify source files exist
+for f in \
+  mr-comments-collector.mjs \
+  collect-mr-comments.mjs \
+  gitlab-client.mjs \
+  preprocess-comments.mjs \
+  get-diff.mjs \
+  .env.example; do
+  if [[ ! -f "$SCRIPT_DIR/$f" ]]; then
+    echo "Error: source file missing from installer: $f"
+    exit 1
+  fi
+done
+
 # Copy tool files
 TOOL_DEST="$TARGET_DIR/.review-collector"
 mkdir -p "$TOOL_DEST"
@@ -48,4 +62,15 @@ for f in \
   .env.example; do
   cp "$SCRIPT_DIR/$f" "$TOOL_DEST/$f"
   echo "  ✓ $f"
+done
+
+# Copy skills
+SKILLS_DEST="$CLAUDE_DIR/skills"
+mkdir -p "$SKILLS_DEST"
+
+echo ""
+echo "Copying Claude skills..."
+for skill in mine-patterns review-commits; do
+  cp -r "$SCRIPT_DIR/.claude/skills/$skill" "$SKILLS_DEST/$skill"
+  echo "  ✓ $skill"
 done
