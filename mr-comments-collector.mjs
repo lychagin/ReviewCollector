@@ -275,6 +275,15 @@ export async function collectMrComments(options) {
     allMrs = dedupeMrsByIid(allMrs);
     console.error(`Найдено MR (после дедупликации): ${allMrs.length}`);
 
+    // Оценка времени: ~0.65с на MR (эмпирически)
+    const estimatedSec = Math.round(allMrs.length * 0.65);
+    const estimatedMin = Math.floor(estimatedSec / 60);
+    const estimatedRemSec = estimatedSec % 60;
+    const estimatedStr = estimatedMin > 0
+        ? `${estimatedMin} мин ${estimatedRemSec > 0 ? estimatedRemSec + " с" : ""}`
+        : `${estimatedSec} с`;
+    console.error(`Оценка времени выгрузки: ~${estimatedStr}`);
+
     // 3. Сбор discussions и flattening
     const exportedAt = new Date().toISOString();
     const records = [];
@@ -287,9 +296,25 @@ export async function collectMrComments(options) {
         filtered: { system: 0, bot: 0, empty: 0 },
     };
 
+    const startTime = Date.now();
     for (let i = 0; i < allMrs.length; i++) {
         const mr = allMrs[i];
-        if (verbose) console.error(`  [${i + 1}/${allMrs.length}] MR !${mr.iid}: ${mr.title}`);
+
+        // Progress bar (всегда, не только в verbose)
+        const done = i + 1;
+        const total = allMrs.length;
+        const pct = Math.round((done / total) * 100);
+        const barWidth = 30;
+        const filled = Math.round((done / total) * barWidth);
+        const bar = "█".repeat(filled) + "░".repeat(barWidth - filled);
+        const elapsedSec = (Date.now() - startTime) / 1000;
+        const etaSec = done > 1 ? Math.round((elapsedSec / done) * (total - done)) : null;
+        const etaStr = etaSec !== null
+            ? (etaSec >= 60 ? `~${Math.floor(etaSec / 60)}м ${etaSec % 60}с` : `~${etaSec}с`)
+            : "...";
+        process.stderr.write(`\r  [${bar}] ${done}/${total} (${pct}%)  осталось: ${etaStr}   `);
+
+        if (verbose) console.error(`\n  MR !${mr.iid}: ${mr.title}`);
 
         try {
             const discussions = await fetchMrDiscussions(gitlabApiPaginated, projectPath, mr.iid);
@@ -329,6 +354,7 @@ export async function collectMrComments(options) {
             await sleep(200);
         }
     }
+    process.stderr.write("\n"); // завершить строку progress bar
 
     // 4. Запись JSONL + meta
     const dt = formatFileDateTime();
