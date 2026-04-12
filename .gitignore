@@ -1,0 +1,8 @@
+.env
+.env~
+node_modules/
+*.jsonl
+*.meta.json
+pending/
+processed/
+archive/
