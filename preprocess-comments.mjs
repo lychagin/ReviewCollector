@@ -11,7 +11,7 @@ export const SCHEMA_VERSION = "1.0";
 export function reconstructThread(notes) {
     const root = notes.find((n) => n.is_root_note) ?? notes[0];
     const replies = notes
-        .filter((n) => !n.is_root_note)
+        .filter((n) => n !== root && !n.is_root_note)
         .map((n) => n.note_body);
 
     const { code_snippets: rootSnippets, text: rootText } = splitCodeFences(root.note_body);

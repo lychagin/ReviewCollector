@@ -88,3 +88,13 @@ test("splitCodeFences: no fences returns original text", () => {
     assert.equal(text, "Plain text");
     assert.deepEqual(code_snippets, []);
 });
+
+test("reconstructThread: no explicit root note — fallback to first, no duplication", () => {
+    const notes = [
+        makeNote({ is_root_note: false, reply_index_in_discussion: 0, note_body: "First note" }),
+        makeNote({ is_root_note: false, reply_index_in_discussion: 1, note_body: "Second note" }),
+    ];
+    const thread = reconstructThread(notes);
+    assert.equal(thread.root_comment, "First note");
+    assert.deepEqual(thread.replies, ["Second note"]);  // First note NOT in replies
+});
