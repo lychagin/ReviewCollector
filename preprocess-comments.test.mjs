@@ -140,7 +140,7 @@ test("detectNewFiles: returns files not in alreadyProcessed", () => {
         fsWriteFileSync(pathJoin(dir, "mr-notes-2026-02.jsonl"), "");
         fsWriteFileSync(pathJoin(dir, "mr-notes-2026-01.meta.json"), "");
         const result = detectNewFiles(dir, ["mr-notes-2026-01.jsonl"]);
-        assert.deepEqual(result, ["mr-notes-2026-02.jsonl"]);
+        assert.deepEqual(result.sort(), ["mr-notes-2026-02.jsonl"]);
     } finally {
         rmSync(dir, { recursive: true });
     }
@@ -157,4 +157,8 @@ test("detectNewFiles: empty dir returns empty array", () => {
 
 test("detectNewFiles: nonexistent dir returns empty array", () => {
     assert.deepEqual(detectNewFiles("/nonexistent/path", []), []);
+});
+
+test("filterAuthorNotes: empty array returns empty array", () => {
+    assert.deepEqual(filterAuthorNotes([]), []);
 });
