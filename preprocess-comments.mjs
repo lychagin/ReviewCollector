@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, renameSync } from "node:fs";
 import { join, basename } from "node:path";
 
 export const SCHEMA_VERSION = "1.0";
@@ -152,17 +152,32 @@ export function writeThreadsJsonl(patternsDir, threads) {
     return outPath;
 }
 
+/**
+ * Moves a processed .jsonl file (and its .meta.json if present)
+ * from pendingDir to processedDir.
+ */
+export function moveToProcessed(pendingDir, processedDir, filename) {
+    renameSync(join(pendingDir, filename), join(processedDir, filename));
+    const metaname = filename.replace(/\.jsonl$/, ".meta.json");
+    const metaSrc = join(pendingDir, metaname);
+    if (existsSync(metaSrc)) {
+        renameSync(metaSrc, join(processedDir, metaname));
+    }
+}
+
 // ─── CLI entry point ──────────────────────────────────────────────────────────
 
 function main() {
     const projectDir = new URL(".", import.meta.url).pathname;
-    const processedDir = join(projectDir, "processed");
+    const pendingDir = join(projectDir, "review", "raw", "pending");
+    const processedDir = join(projectDir, "review", "raw", "processed");
     const patternsDir = join(projectDir, "patterns");
 
     mkdirSync(patternsDir, { recursive: true });
+    mkdirSync(processedDir, { recursive: true });
 
     const state = loadState(patternsDir);
-    const newFiles = detectNewFiles(processedDir, state.processed_files);
+    const newFiles = detectNewFiles(pendingDir, state.processed_files);
 
     if (newFiles.length === 0) {
         console.log("No new files to process.");
@@ -171,11 +186,12 @@ function main() {
 
     const allThreads = [];
     for (const filename of newFiles) {
-        const filePath = join(processedDir, filename);
+        const filePath = join(pendingDir, filename);
         const records = readJsonlFile(filePath);
         const threads = buildThreads(records);
         allThreads.push(...threads);
         state.processed_files.push(filename);
+        moveToProcessed(pendingDir, processedDir, filename);
     }
 
     writeThreadsJsonl(patternsDir, allThreads);

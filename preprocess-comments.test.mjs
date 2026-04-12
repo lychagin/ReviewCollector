@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { reconstructThread, normalizeText, splitCodeFences, filterAuthorNotes, detectNewFiles } from "./preprocess-comments.mjs";
-import { readJsonlFile, buildThreads, loadState, saveState, writeThreadsJsonl } from "./preprocess-comments.mjs";
-import { mkdtempSync, writeFileSync as fsWriteFileSync, rmSync, readFileSync } from "node:fs";
+import { readJsonlFile, buildThreads, loadState, saveState, writeThreadsJsonl, moveToProcessed } from "./preprocess-comments.mjs";
+import { mkdtempSync, writeFileSync as fsWriteFileSync, rmSync, readFileSync, existsSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join as pathJoin } from "node:path";
 
@@ -230,6 +230,43 @@ test("writeThreadsJsonl: writes threads to JSONL file and returns path", () => {
         const lines = readFileSync(outPath, "utf8").trim().split("\n");
         assert.equal(lines.length, 1);
         assert.deepEqual(JSON.parse(lines[0]), threads[0]);
+    } finally {
+        rmSync(dir, { recursive: true });
+    }
+});
+
+test("moveToProcessed: moves .jsonl and .meta.json to processed dir", () => {
+    const dir = mkdtempSync(pathJoin(tmpdir(), "rc-test-"));
+    const pendingDir = pathJoin(dir, "pending");
+    const processedDir = pathJoin(dir, "processed");
+    mkdirSync(pendingDir, { recursive: true });
+    mkdirSync(processedDir, { recursive: true });
+    const filename = "mr-notes-2026-04-12.jsonl";
+    const metaname = "mr-notes-2026-04-12.meta.json";
+    fsWriteFileSync(pathJoin(pendingDir, filename), "{}");
+    fsWriteFileSync(pathJoin(pendingDir, metaname), "{}");
+    try {
+        moveToProcessed(pendingDir, processedDir, filename);
+        assert.ok(existsSync(pathJoin(processedDir, filename)), ".jsonl moved");
+        assert.ok(existsSync(pathJoin(processedDir, metaname)), ".meta.json moved");
+        assert.ok(!existsSync(pathJoin(pendingDir, filename)), ".jsonl removed from pending");
+        assert.ok(!existsSync(pathJoin(pendingDir, metaname)), ".meta.json removed from pending");
+    } finally {
+        rmSync(dir, { recursive: true });
+    }
+});
+
+test("moveToProcessed: works when .meta.json absent", () => {
+    const dir = mkdtempSync(pathJoin(tmpdir(), "rc-test-"));
+    const pendingDir = pathJoin(dir, "pending");
+    const processedDir = pathJoin(dir, "processed");
+    mkdirSync(pendingDir, { recursive: true });
+    mkdirSync(processedDir, { recursive: true });
+    const filename = "mr-notes-2026-04-12.jsonl";
+    fsWriteFileSync(pathJoin(pendingDir, filename), "{}");
+    try {
+        moveToProcessed(pendingDir, processedDir, filename);
+        assert.ok(existsSync(pathJoin(processedDir, filename)), ".jsonl moved");
     } finally {
         rmSync(dir, { recursive: true });
     }
