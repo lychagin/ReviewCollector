@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { reconstructThread, normalizeText, splitCodeFences, filterAuthorNotes, detectNewFiles } from "./preprocess-comments.mjs";
+import { readJsonlFile, buildThreads, loadState, saveState } from "./preprocess-comments.mjs";
 import { mkdtempSync, writeFileSync as fsWriteFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join as pathJoin } from "node:path";
@@ -161,4 +162,59 @@ test("detectNewFiles: nonexistent dir returns empty array", () => {
 
 test("filterAuthorNotes: empty array returns empty array", () => {
     assert.deepEqual(filterAuthorNotes([]), []);
+});
+
+test("readJsonlFile: parses records and injects _source_file", () => {
+    const dir = mkdtempSync(pathJoin(tmpdir(), "rc-test-"));
+    try {
+        const record = { discussion_id: "d1", note_body: "hi", is_root_note: true, reply_index_in_discussion: 0,
+            discussion_kind: "diff", discussion_resolved: false, file_path: null,
+            note_by_mr_author: false, mr_iid: 1 };
+        fsWriteFileSync(pathJoin(dir, "test.jsonl"), JSON.stringify(record) + "\n");
+        const records = readJsonlFile(pathJoin(dir, "test.jsonl"));
+        assert.equal(records.length, 1);
+        assert.equal(records[0]._source_file, "test.jsonl");
+        assert.equal(records[0].discussion_id, "d1");
+    } finally {
+        rmSync(dir, { recursive: true });
+    }
+});
+
+test("buildThreads: groups by discussion_id and reconstructs threads", () => {
+    const base = { discussion_kind: "diff", discussion_resolved: false, file_path: null,
+        note_by_mr_author: false, mr_iid: 1, _source_file: "x.jsonl" };
+    const records = [
+        { ...base, discussion_id: "d1", note_body: "Comment A", is_root_note: true, reply_index_in_discussion: 0 },
+        { ...base, discussion_id: "d1", note_body: "Reply B", is_root_note: false, reply_index_in_discussion: 1 },
+        { ...base, discussion_id: "d2", note_body: "Comment C", is_root_note: true, reply_index_in_discussion: 0 },
+    ];
+    const threads = buildThreads(records);
+    assert.equal(threads.length, 2);
+    const d1 = threads.find((t) => t.discussion_id === "d1");
+    assert.equal(d1.root_comment, "Comment A");
+    assert.deepEqual(d1.replies, ["Reply B"]);
+});
+
+test("loadState: returns empty state if file missing", () => {
+    const dir = mkdtempSync(pathJoin(tmpdir(), "rc-test-"));
+    try {
+        const state = loadState(dir);
+        assert.deepEqual(state.processed_files, []);
+        assert.deepEqual(state.raw_patterns, []);
+    } finally {
+        rmSync(dir, { recursive: true });
+    }
+});
+
+test("saveState / loadState: round-trip", () => {
+    const dir = mkdtempSync(pathJoin(tmpdir(), "rc-test-"));
+    try {
+        const state = { schema_version: "1.0", processed_files: ["a.jsonl"], raw_patterns: [], last_updated: null };
+        saveState(dir, state);
+        const loaded = loadState(dir);
+        assert.deepEqual(loaded.processed_files, ["a.jsonl"]);
+        assert.ok(loaded.last_updated); // set by saveState
+    } finally {
+        rmSync(dir, { recursive: true });
+    }
 });

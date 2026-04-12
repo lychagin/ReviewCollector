@@ -91,3 +91,91 @@ export function detectNewFiles(processedDir, alreadyProcessed) {
     const processed = new Set(alreadyProcessed);
     return all.filter((f) => !processed.has(f));
 }
+
+// ─── State I/O ────────────────────────────────────────────────────────────────
+
+export function loadState(patternsDir) {
+    const statePath = join(patternsDir, "mining-state.json");
+    if (!existsSync(statePath)) {
+        return { schema_version: SCHEMA_VERSION, processed_files: [], raw_patterns: [], last_updated: null };
+    }
+    return JSON.parse(readFileSync(statePath, "utf8"));
+}
+
+export function saveState(patternsDir, state) {
+    const statePath = join(patternsDir, "mining-state.json");
+    const updated = { ...state, last_updated: new Date().toISOString() };
+    writeFileSync(statePath, JSON.stringify(updated, null, 2));
+}
+
+// ─── JSONL processing ─────────────────────────────────────────────────────────
+
+/**
+ * Reads a JSONL file, returns array of flat note records
+ * with _source_file injected (basename of the file).
+ */
+export function readJsonlFile(filePath) {
+    const src = basename(filePath);
+    return readFileSync(filePath, "utf8")
+        .split("\n")
+        .filter(Boolean)
+        .map((line) => ({ ...JSON.parse(line), _source_file: src }));
+}
+
+/**
+ * Groups flat records by discussion_id, applies filterAuthorNotes,
+ * reconstructs each thread. Returns array of thread objects.
+ */
+export function buildThreads(records) {
+    const byDiscussion = new Map();
+    for (const r of records) {
+        const key = r.discussion_id;
+        if (!byDiscussion.has(key)) byDiscussion.set(key, []);
+        byDiscussion.get(key).push(r);
+    }
+    const threads = [];
+    for (const notes of byDiscussion.values()) {
+        const sorted = notes.slice().sort((a, b) => a.reply_index_in_discussion - b.reply_index_in_discussion);
+        const filtered = filterAuthorNotes(sorted);
+        if (filtered.length > 0) threads.push(reconstructThread(filtered));
+    }
+    return threads;
+}
+
+// ─── CLI entry point ──────────────────────────────────────────────────────────
+
+async function main() {
+    const { mkdirSync } = await import("node:fs");
+    const projectDir = new URL(".", import.meta.url).pathname;
+    const processedDir = join(projectDir, "processed");
+    const patternsDir = join(projectDir, "patterns");
+
+    mkdirSync(patternsDir, { recursive: true });
+
+    const state = loadState(patternsDir);
+    const newFiles = detectNewFiles(processedDir, state.processed_files);
+
+    if (newFiles.length === 0) {
+        console.log("No new files to process.");
+        return;
+    }
+
+    const allThreads = [];
+    for (const filename of newFiles) {
+        const filePath = join(processedDir, filename);
+        const records = readJsonlFile(filePath);
+        const threads = buildThreads(records);
+        allThreads.push(...threads);
+        state.processed_files.push(filename);
+    }
+
+    const outPath = join(patternsDir, "threads.jsonl");
+    writeFileSync(outPath, allThreads.map((t) => JSON.stringify(t)).join("\n") + "\n");
+    saveState(patternsDir, state);
+
+    console.log(`Processed ${newFiles.length} new file(s), ${allThreads.length} threads written to patterns/threads.jsonl`);
+}
+
+if (process.argv[1] === new URL(import.meta.url).pathname) {
+    main().catch((e) => { console.error(e.message); process.exit(1); });
+}
