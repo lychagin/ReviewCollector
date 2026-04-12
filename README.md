@@ -20,6 +20,38 @@ structured review report
 
 Review Collector — первая ступень: он скачивает все человеческие комментарии из MR за заданный период и сохраняет их в файлы для дальнейшей обработки.
 
+## Installing into another project
+
+To use review-collector in your project, run `install.sh` from a local clone:
+
+```bash
+git clone <repo-url> review-collector
+cd review-collector
+./install.sh /path/to/your-project
+```
+
+Optionally specify a custom `.claude` directory:
+
+```bash
+./install.sh /path/to/your-project /path/to/your-project/.claude
+```
+
+The script will:
+- Copy tool files to `your-project/.review-collector/`
+- Copy Claude skills to `your-project/.claude/skills/`
+- Create runtime directories
+
+After install, copy and fill in your credentials:
+
+```bash
+cp your-project/.review-collector/.env.example your-project/.review-collector/.env
+# Edit .env: set GITLAB_TOKEN and GITLAB_URL
+```
+
+Then use Claude Code skills in your project:
+- `/mine-patterns` — extract and analyze MR review patterns
+- `/review-commits` — review your commits against the patterns
+
 ## Требования
 
 - Node.js 20+
