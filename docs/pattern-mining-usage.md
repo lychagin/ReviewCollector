@@ -91,7 +91,7 @@ node --test preprocess-comments.test.mjs
 - `reconstructThread()` — плоские записи → тред с root + replies
 - `normalizeText()` — strip markdown, выделение code fences
 - `filterAuthorNotes()` — фильтрация `note_by_mr_author`
-- `detectNewFiles()` — сравнение `processed/` с `mining-state.processed_files`
+- `detectNewFiles()` — сравнение `review/raw/pending/` с `mining-state.processed_files`
 
 ### Проверка качества паттернов (вручную)
 
