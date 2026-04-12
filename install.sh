@@ -79,7 +79,8 @@ mkdir -p "$SKILLS_DEST"
 echo ""
 echo "Copying Claude skills..."
 for skill in mine-patterns review-commits; do
-  cp -r "$SCRIPT_DIR/.claude/skills/$skill" "$SKILLS_DEST/$skill"
+  mkdir -p "$SKILLS_DEST/$skill"
+  cp -r "$SCRIPT_DIR/.claude/skills/$skill/." "$SKILLS_DEST/$skill/"
   echo "  ✓ $skill"
 done
 
