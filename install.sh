@@ -49,6 +49,12 @@ for f in \
   fi
 done
 
+# Pre-flight: verify patterns exist (optional — warn but don't abort)
+PATTERNS_AVAILABLE=false
+if [[ -f "$SCRIPT_DIR/patterns/review-patterns.json" && -f "$SCRIPT_DIR/patterns/review-patterns.md" ]]; then
+  PATTERNS_AVAILABLE=true
+fi
+
 # Pre-flight: verify skill directories exist
 for skill in mine-patterns review-commits; do
   if [[ ! -d "$SCRIPT_DIR/.claude/skills/$skill" ]]; then
@@ -97,6 +103,20 @@ mkdir -p "$TOOL_DEST/patterns"
 echo "  ✓ review-collector/review/raw/pending/"
 echo "  ✓ review-collector/review/raw/processed/"
 echo "  ✓ review-collector/patterns/"
+
+# Copy patterns if available
+if [[ "$PATTERNS_AVAILABLE" == "true" ]]; then
+  echo ""
+  echo "Copying pattern base..."
+  cp "$SCRIPT_DIR/patterns/review-patterns.json" "$TOOL_DEST/patterns/review-patterns.json"
+  cp "$SCRIPT_DIR/patterns/review-patterns.md"   "$TOOL_DEST/patterns/review-patterns.md"
+  echo "  ✓ patterns/review-patterns.json"
+  echo "  ✓ patterns/review-patterns.md"
+else
+  echo ""
+  echo "  Note: patterns/review-patterns.json not found in installer."
+  echo "        Run /mine-patterns after setup to build the pattern base."
+fi
 
 # Print setup instructions
 echo ""
