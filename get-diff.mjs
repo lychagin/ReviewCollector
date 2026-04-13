@@ -36,16 +36,24 @@ export function parseCommits(rawLog) {
 
 // ─── Git wrappers ─────────────────────────────────────────────────────────────
 
-export function runGitLog(range) {
-    return execSync(`git log ${range} --format="%H\t%s\t%an"`, { encoding: "utf8" });
+/**
+ * Returns a `git -C <repoPath>` prefix so commands work from any cwd
+ * and match the `Bash(git *)` permission pattern without needing `cd &&`.
+ */
+function git(repoPath) {
+    return `git -C ${repoPath}`;
 }
 
-export function runGitDiff(range) {
-    return execSync(`git diff ${range}`, { encoding: "utf8" });
+export function runGitLog(range, repoPath = process.cwd()) {
+    return execSync(`${git(repoPath)} log ${range} --format="%H\t%s\t%an"`, { encoding: "utf8" });
 }
 
-export function runGitFilesChanged(range) {
-    return execSync(`git diff --name-only ${range}`, { encoding: "utf8" })
+export function runGitDiff(range, repoPath = process.cwd()) {
+    return execSync(`${git(repoPath)} diff ${range}`, { encoding: "utf8" });
+}
+
+export function runGitFilesChanged(range, repoPath = process.cwd()) {
+    return execSync(`${git(repoPath)} diff --name-only ${range}`, { encoding: "utf8" })
         .split("\n")
         .filter(Boolean);
 }
@@ -54,20 +62,31 @@ export function runGitFilesChanged(range) {
  * Returns the full diff payload for a git ref.
  * Throws (from execSync) if the ref is invalid or not in a git repo.
  */
-export function buildOutput(rawRef) {
+export function buildOutput(rawRef, repoPath = process.cwd()) {
     const range = normalizeRef(rawRef);
-    const commits = parseCommits(runGitLog(range));
-    const diff = runGitDiff(range);
-    const files_changed = runGitFilesChanged(range);
+    const commits = parseCommits(runGitLog(range, repoPath));
+    const diff = runGitDiff(range, repoPath);
+    const files_changed = runGitFilesChanged(range, repoPath);
     return { commits, diff, files_changed };
 }
 
 // ─── CLI entry point ──────────────────────────────────────────────────────────
 
 if (process.argv[1] === new URL(import.meta.url).pathname) {
-    const rawRef = process.argv[2] ?? "HEAD";
+    // Usage: node get-diff.mjs [--repo <path>] <git-ref>
+    const args = process.argv.slice(2);
+    let repoPath = process.cwd();
+    let rawRef = "HEAD";
+
+    const repoIdx = args.indexOf("--repo");
+    if (repoIdx !== -1) {
+        repoPath = args[repoIdx + 1];
+        args.splice(repoIdx, 2);
+    }
+    if (args.length > 0) rawRef = args[0];
+
     try {
-        const output = buildOutput(rawRef);
+        const output = buildOutput(rawRef, repoPath);
         process.stdout.write(JSON.stringify(output));
     } catch (e) {
         process.stderr.write(e.message + "\n");

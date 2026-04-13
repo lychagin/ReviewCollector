@@ -32,9 +32,16 @@ The skill is invoked as `/review-commits <arg>` where `<arg>` is optional.
 
 ## Step 2: Get the diff
 
+Determine the repo root: it is the current working directory (where Claude Code is running).
+
 Run:
 ```bash
-node get-diff.mjs <git-ref>
+node review-collector/get-diff.mjs --repo <repo-root> <git-ref>
+```
+
+Where `<repo-root>` is the absolute path to the project root. Example:
+```bash
+node review-collector/get-diff.mjs --repo /home/user/my-project HEAD~3
 ```
 
 Read the JSON from stdout. It has the shape:
@@ -48,7 +55,9 @@ Read the JSON from stdout. It has the shape:
 
 If the command exits with code 1, stop and report the error to the user.
 
-If Node.js reports "Cannot find module", stop with: `get-diff.mjs not found in project root. Check that you are running from the review-collector directory.`
+If Node.js reports "Cannot find module", stop with: `get-diff.mjs not found. Check that review-collector is installed in the project root.`
+
+**IMPORTANT: Do not run any additional git commands during analysis.** All information needed (commits, diff, changed files) is already in the JSON output above. Never use `cd && git` — if you absolutely must run git, use `git -C <repo-root>` instead.
 
 ---
 
